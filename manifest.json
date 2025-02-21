@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Visual Timer",
     "version": "1.0",
-    "permissions": ["storage", "activeTab", "scripting"],
+    "permissions": ["storage", "activeTab", "alarms", "idle"],
     "background": {
       "service_worker": "background.js",
       "type": "module"
@@ -16,8 +16,8 @@
       }
     ],
     "action": {
-      "default_icon": "icons/icon48.jpeg",
-        "default_popup": "popup.html"
+      "default_icon": "icons/icon48.png",
+      "default_popup": "popup.html"
     },
-    "icons": { "48": "icons/icon48.jpeg" }
+    "icons": { "48": "icons/icon48.png" }
   }
