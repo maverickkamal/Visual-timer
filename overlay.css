@@ -6,7 +6,9 @@
   height: 100vh;
   pointer-events: none;
   z-index: 2147483647;
-  mix-blend-mode: screen; /* Better visibility on dark themes */
+  mix-blend-mode: screen;
+  background-color: hsla(240, 100%, 50%, 0.3); /* Initial blue */
+  transition: background-color 0.5s linear !important;
 }
 
 #visual-timer-display {

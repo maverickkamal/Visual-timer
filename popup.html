@@ -2,11 +2,24 @@
 <html>
   <head>
     <style>
-      body { width: 200px; padding: 10px; }
+      body { width: 300px; padding: 15px; font-family: Arial; }
+      label { display: block; margin: 10px 0; }
+      input[type="range"] { width: 100%; }
     </style>
   </head>
   <body>
-    <h3>Visual Timer</h3>
-    <p>Settings coming soon!</p>
+    <h3>Visual Timer Settings</h3>
+    
+    <label>Transition Speed (Fast → Slow):</label>
+    <input type="range" id="speed" min="1" max="10" value="4">
+    
+    <label>Color Theme:</label>
+    <select id="theme">
+      <option value="blue-red">Blue → Red</option>
+      <option value="green-purple">Green → Purple</option>
+    </select>
+    
+    <button id="save">Save</button>
+    <script src="popup.js"></script>
   </body>
 </html>

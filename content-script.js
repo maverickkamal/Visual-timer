@@ -1,3 +1,5 @@
+console.log("[CONTENT] Script injected into:", window.location.href);
+
 let totalSeconds = 0;
 const overlay = document.createElement('div');
 overlay.id = 'visual-timer-overlay';
@@ -13,31 +15,39 @@ chrome.storage.local.get(['totalSeconds'], (result) => {
   updateDisplay();
 });
 
-// Message listener
-// Update the message listener to avoid async response errors
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+// Message listener with debug logs
+// Add this after creating the overlay
+let lastColor = '';
+chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'update') {
-    overlay.style.backgroundColor = message.color;
+    // Force DOM update for color change
+    if (message.color !== lastColor) {
+      overlay.style.cssText = `background-color: ${message.color} !important;`;
+      lastColor = message.color;
+    }
+    
     totalSeconds = message.seconds;
     updateDisplay();
   }
-  return false; // Explicitly indicate no async response
 });
 
+// Modify updateDisplay() for live feedback
 function updateDisplay() {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  timeDisplay.textContent = `${minutes}m ${seconds}s`;
+  timeDisplay.textContent = `${Math.floor(totalSeconds/60)}m ${totalSeconds%60}s`;
+  timeDisplay.style.color = `hsl(${240 - (totalSeconds * hueShiftSpeed)}, 100%, 70%)`;
 }
 
-// Fix YouTube/LinkedIn overlay issues
+// YouTube compatibility fix
 if (window.location.hostname.includes('youtube.com')) {
   const style = document.createElement('style');
   style.textContent = `
-    ytd-watch-flexy[theater] #player-theater-container,
-    #player-container {
-      z-index: 2147483646 !important;
+    #player-container { 
+      z-index: 2147483646 !important; 
+    }
+    #visual-timer-overlay {
+      mix-blend-mode: screen !important;
     }
   `;
   document.head.appendChild(style);
 }
+
