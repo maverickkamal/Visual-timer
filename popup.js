@@ -1,9 +1,115 @@
-document.getElementById("save").addEventListener("click", () => {
-    const speed = document.getElementById("speed").value;
-    const theme = document.getElementById("theme").value;
-    
-    chrome.storage.sync.set({ speed, theme }, () => {
-      chrome.runtime.sendMessage({ type: 'reload' }); // Notify background
-      window.close();
+// Load saved settings
+chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime'], (result) => {
+  document.getElementById('toggleEnabled').checked = result.enabled !== false;
+  document.getElementById('showTime').checked = result.showTime !== false;
+  
+  // Set time inputs
+  const targetTime = result.targetTime || { hours: 2, minutes: 0 };
+  document.getElementById('hoursInput').value = targetTime.hours;
+  document.getElementById('minutesInput').value = targetTime.minutes;
+  
+  updatePauseButtonText(result.isPaused || false);
+  updatePauseButtonState(result.enabled !== false);
+});
+
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Save settings
+  document.getElementById('toggleEnabled').addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    chrome.storage.sync.set({ enabled }, () => {
+      chrome.runtime.sendMessage({ 
+        type: 'settingsUpdated',
+        data: { enabled }
+      });
+      updatePauseButtonState(enabled);
+      // Update time display visibility when toggling enabled state
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.url?.startsWith("http")) {
+            chrome.tabs.sendMessage(tab.id, {
+              type: 'updateVisibility',
+              showTime: document.getElementById('showTime').checked && enabled
+            });
+          }
+        });
+      });
     });
   });
+
+  document.getElementById('showTime').addEventListener('change', (e) => {
+    const showTime = e.target.checked;
+    const enabled = document.getElementById('toggleEnabled').checked;
+    chrome.storage.sync.set({ showTime }, () => {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.url?.startsWith("http")) {
+            chrome.tabs.sendMessage(tab.id, {
+              type: 'updateVisibility',
+              showTime: showTime && enabled
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // Time input controls
+  const setupTimeInputs = () => {
+    document.getElementById('hoursInput').addEventListener('change', updateTargetTime);
+    document.getElementById('minutesInput').addEventListener('change', updateTargetTime);
+  };
+  setupTimeInputs();
+
+  // Timer controls
+  document.getElementById('resetTimer').addEventListener('click', () => {
+    chrome.storage.local.set({ totalSeconds: 0 }, () => {
+      chrome.runtime.sendMessage({ type: 'resetTimer' });
+    });
+  });
+
+  document.getElementById('pauseTimer').addEventListener('click', () => {
+    chrome.storage.sync.get(['isPaused'], (result) => {
+      const newPausedState = !result.isPaused;
+      chrome.storage.sync.set({ isPaused: newPausedState }, () => {
+        chrome.runtime.sendMessage({ 
+          type: 'togglePause', 
+          isPaused: newPausedState 
+        });
+        updatePauseButtonText(newPausedState);
+      });
+    });
+  });
+});
+
+// Time input controls
+function updateTargetTime() {
+  const hours = parseInt(document.getElementById('hoursInput').value) || 0;
+  const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+  const targetTime = { hours, minutes };
+  
+  chrome.storage.sync.set({ targetTime }, () => {
+    chrome.runtime.sendMessage({ 
+      type: 'timeSettingsUpdated',
+      targetTime
+    });
+  });
+}
+
+// Helper functions
+function updatePauseButtonText(isPaused) {
+  const pauseButton = document.getElementById('pauseTimer');
+  if (pauseButton) {
+    pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+    pauseButton.classList.toggle('btn-primary', isPaused);
+    pauseButton.classList.toggle('btn-secondary', !isPaused);
+  }
+}
+
+function updatePauseButtonState(enabled) {
+  const pauseButton = document.getElementById('pauseTimer');
+  if (pauseButton) {
+    pauseButton.disabled = !enabled;
+    pauseButton.style.opacity = enabled ? '1' : '0.5';
+  }
+}
