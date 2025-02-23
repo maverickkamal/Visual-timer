@@ -1,19 +1,19 @@
-// Load saved settings
-chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime'], (result) => {
-  document.getElementById('toggleEnabled').checked = result.enabled !== false;
-  document.getElementById('showTime').checked = result.showTime !== false;
-  
-  // Set time inputs
-  const targetTime = result.targetTime || { hours: 2, minutes: 0 };
-  document.getElementById('hoursInput').value = targetTime.hours;
-  document.getElementById('minutesInput').value = targetTime.minutes;
-  
-  updatePauseButtonText(result.isPaused || false);
-  updatePauseButtonState(result.enabled !== false);
-});
-
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Load saved settings after DOM is fully loaded
+  chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime'], (result) => {
+    document.getElementById('toggleEnabled').checked = result.enabled !== false;
+    document.getElementById('showTime').checked = result.showTime !== false;
+    
+    // Set time inputs
+    const targetTime = result.targetTime || { hours: 2, minutes: 0 };
+    document.getElementById('hoursInput').value = targetTime.hours;
+    document.getElementById('minutesInput').value = targetTime.minutes;
+    
+    updatePauseButtonText(result.isPaused || false);
+    updatePauseButtonState(result.enabled !== false);
+  });
+
   // Save settings
   document.getElementById('toggleEnabled').addEventListener('change', (e) => {
     const enabled = e.target.checked;
@@ -23,17 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data: { enabled }
       });
       updatePauseButtonState(enabled);
-      // Update time display visibility when toggling enabled state
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          if (tab.url?.startsWith("http")) {
-            chrome.tabs.sendMessage(tab.id, {
-              type: 'updateVisibility',
-              showTime: document.getElementById('showTime').checked && enabled
-            });
-          }
-        });
-      });
+      updateTabsVisibility();
     });
   });
 
@@ -41,25 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const showTime = e.target.checked;
     const enabled = document.getElementById('toggleEnabled').checked;
     chrome.storage.sync.set({ showTime }, () => {
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          if (tab.url?.startsWith("http")) {
-            chrome.tabs.sendMessage(tab.id, {
-              type: 'updateVisibility',
-              showTime: showTime && enabled
-            });
-          }
-        });
-      });
+      updateTabsVisibility();
     });
   });
 
   // Time input controls
-  const setupTimeInputs = () => {
-    document.getElementById('hoursInput').addEventListener('change', updateTargetTime);
-    document.getElementById('minutesInput').addEventListener('change', updateTargetTime);
-  };
-  setupTimeInputs();
+  document.getElementById('hoursInput').addEventListener('change', updateTargetTime);
+  document.getElementById('minutesInput').addEventListener('change', updateTargetTime);
 
   // Timer controls
   document.getElementById('resetTimer').addEventListener('click', () => {
@@ -81,6 +59,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// Helper function to safely update tab visibility
+function updateTabsVisibility() {
+  const enabled = document.getElementById('toggleEnabled').checked;
+  const showTime = document.getElementById('showTime').checked;
+  
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (tab.url?.startsWith("http")) {
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'updateVisibility',
+          showTime: showTime && enabled
+        }).catch(() => {
+          // Ignore errors from tabs that aren't ready yet
+          console.debug('Tab not ready:', tab.id);
+        });
+      }
+    });
+  });
+}
 
 // Time input controls
 function updateTargetTime() {

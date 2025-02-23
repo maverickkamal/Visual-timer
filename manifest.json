@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "Visual Timer",
   "version": "1.0",
+  "description": "A visual timer that changes color over time to help track time visually",
   "permissions": ["storage", "alarms", "idle", "tabs"], 
   "background": {
     "service_worker": "background.js",
@@ -17,8 +18,7 @@
     }
   ],
   "action": {
-    "default_icon": "icons/icon48.png",
-    "default_popup": "popup.html"
-  },
-  "icons": { "48": "icons/icon48.png" }
+    "default_popup": "popup.html",
+    "default_icon": "icon128.png"
+  }
 }
