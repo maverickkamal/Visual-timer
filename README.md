@@ -1,5 +1,9 @@
 # Visual Timer Chrome Extension
 
+<p align="center">
+  <img src="icon128.png" alt="Visual Timer Icon" width="128" height="128">
+</p>
+
 A Chrome extension that provides a visual time-tracking overlay that changes color over time, helping you stay aware of time passing while working on tasks.
 
 ## Features
