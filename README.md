@@ -114,6 +114,32 @@ The extension requires the following permissions:
 - `idle`: Detect system idle state
 - `tabs`: Apply the overlay to web pages
 
+## Troubleshooting
+
+### Common Issues
+
+1. **Timer Not Appearing or Extension not working**
+   - Try toggling the "Enable Visual Timer" switch off and on again
+   - Refresh the webpage you're trying to use the timer on
+   - Make sure you've granted all necessary permissions
+
+2. **Time Display Not Showing**
+   - Toggle the "Show Time Display" switch off and then on
+   - Check if "Enable Visual Timer" is turned on, as the time display requires the timer to be enabled
+
+3. **Settings Not Syncing**
+   - Make sure you're signed into your browser
+   - Try closing and reopening your browser
+   - Check if you have sync enabled in your browser settings
+
+If these steps don't resolve your issue, please don't hesitate to:
+1. [Create a new issue](https://github.com/yourusername/visual-timer/issues/new) with details about:
+   - Your browser and version
+   - Steps to reproduce the problem
+   - What you expected to happen
+   - What actually happened
+2. Include any error messages from the browser's developer console (F12)
+
 ## Contributing
 
 Feel free to submit issues, fork the repository, and create pull requests for any improvements.
