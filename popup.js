@@ -1,7 +1,7 @@
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
   // Load saved settings after DOM is fully loaded
-  chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime'], (result) => {
+  chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime', 'opacity'], (result) => {
     document.getElementById('toggleEnabled').checked = result.enabled !== false;
     document.getElementById('showTime').checked = result.showTime !== false;
     
@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetTime = result.targetTime || { hours: 2, minutes: 0 };
     document.getElementById('hoursInput').value = targetTime.hours;
     document.getElementById('minutesInput').value = targetTime.minutes;
+
+    // Set opacity
+    const opacity = result.opacity || 70;
+    document.getElementById('opacityControl').value = opacity;
+    document.getElementById('opacityValue').textContent = `${opacity}%`;
     
     updatePauseButtonText(result.isPaused || false);
     updatePauseButtonState(result.enabled !== false);
@@ -32,6 +37,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const enabled = document.getElementById('toggleEnabled').checked;
     chrome.storage.sync.set({ showTime }, () => {
       updateTabsVisibility();
+    });
+  });
+
+  // Opacity control
+  document.getElementById('opacityControl').addEventListener('input', (e) => {
+    const opacity = parseInt(e.target.value);
+    document.getElementById('opacityValue').textContent = `${opacity}%`;
+    chrome.storage.sync.set({ opacity }, () => {
+      chrome.runtime.sendMessage({ 
+        type: 'opacityUpdated',
+        opacity: opacity
+      });
     });
   });
 
@@ -68,13 +85,14 @@ function updateTabsVisibility() {
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.url?.startsWith("http")) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'updateVisibility',
-          showTime: showTime && enabled
-        }).catch(() => {
-          // Ignore errors from tabs that aren't ready yet
+        try {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'updateVisibility',
+            showTime: showTime && enabled
+          }).catch(() => {}); // Silently handle rejected promises
+        } catch (error) {
           console.debug('Tab not ready:', tab.id);
-        });
+        }
       }
     });
   });

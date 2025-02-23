@@ -14,29 +14,27 @@ let isInitialized = false;
 
 // Handle settings changes and updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  try {
-    if (message.type === 'updateVisibility') {
-      updateTimeDisplayVisibility(message.showTime);
-      sendResponse({ success: true });
-    } else if (message.type === 'update') {
-      updateDisplay(message.color, message.seconds, message.enabled);
-      sendResponse({ success: true });
-    }
-  } catch (error) {
-    console.error("[CONTENT] Error handling message:", error);
-    sendResponse({ success: false, error: error.message });
+  if (message.type === 'updateVisibility') {
+    updateTimeDisplayVisibility(message.showTime);
+    sendResponse({ success: true }); // Send immediate response
+    return false; // Don't keep channel open
+  } else if (message.type === 'update') {
+    updateDisplay(message.color, message.seconds, message.enabled);
+    sendResponse({ success: true }); // Send immediate response
+    return false; // Don't keep channel open
   }
-  return true; // Keep the message channel open for async operations
 });
 
 // Initialize visibility once DOM is fully loaded
 function initializeVisibility() {
   if (!isInitialized) {
-    chrome.storage.sync.get(['enabled', 'showTime'], (result) => {
+    chrome.storage.sync.get(['enabled', 'showTime', 'opacity'], (result) => {
       const enabled = result.enabled !== false;
       const showTime = result.showTime !== false;
+      const opacity = result.opacity || 70;
       updateOverlayVisibility(enabled);
       updateTimeDisplayVisibility(showTime && enabled);
+      overlay.style.opacity = opacity / 100;
       isInitialized = true;
     });
   }
@@ -68,8 +66,10 @@ function updateDisplay(color, seconds, enabled) {
   if (!enabled) {
     updateTimeDisplayVisibility(false);
   } else {
-    chrome.storage.sync.get(['showTime'], (result) => {
+    chrome.storage.sync.get(['showTime', 'opacity'], (result) => {
       updateTimeDisplayVisibility(result.showTime && enabled);
+      // Set opacity directly on the overlay element
+      overlay.style.opacity = (result.opacity || 70) / 100;
     });
   }
   

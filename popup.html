@@ -139,6 +139,20 @@
       opacity: 0.5;
       pointer-events: none;
     }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+      background: #333;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: opacity 0.3s;
+    }
+    #opacityValue {
+      min-width: 45px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +184,15 @@
       <span class="time-label">hrs</span>
       <input type="number" id="minutesInput" class="time-input" min="0" max="59" value="0">
       <span class="time-label">min</span>
+    </div>
+  </div>
+
+  <!-- Opacity Control -->
+  <div class="setting-group">
+    <span class="setting-label">Overlay Opacity</span>
+    <div class="slider-container">
+      <input type="range" id="opacityControl" class="range-slider" min="1" max="100" value="70" title="Adjust overlay transparency">
+      <span id="opacityValue" class="tooltip">70%</span>
     </div>
   </div>
 

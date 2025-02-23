@@ -3,6 +3,7 @@ let isActive = true;
 let isEnabled = true;
 let isPaused = false;
 let targetSeconds = 7200; // Default 2 hours
+let opacity = 70; // Default opacity
 let colorStages = [
   { hue: 240, percent: 0 },    // Blue
   { hue: 120, percent: 33 },   // Green
@@ -16,7 +17,8 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({ 
     enabled: true, 
     isPaused: false,
-    targetTime: { hours: 2, minutes: 0 }
+    targetTime: { hours: 2, minutes: 0 },
+    opacity: 70
   });
 });
 
@@ -30,12 +32,13 @@ function loadState() {
     updateAllTabs(); // Update all tabs with current state
   });
   
-  chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime'], (result) => {
+  chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime', 'opacity'], (result) => {
     isEnabled = result.enabled !== false;
     isPaused = result.isPaused || false;
     if (result.targetTime) {
       targetSeconds = (result.targetTime.hours * 3600) + (result.targetTime.minutes * 60);
     }
+    opacity = result.opacity || 70;
     updateAllTabs(); // Update all tabs with current state
   });
 }
@@ -57,6 +60,10 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.targetTime) {
     const newTime = changes.targetTime.newValue;
     targetSeconds = (newTime.hours * 3600) + (newTime.minutes * 60);
+    updateAllTabs();
+  }
+  if (changes.opacity !== undefined) {
+    opacity = changes.opacity.newValue;
     updateAllTabs();
   }
 });
@@ -88,14 +95,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       targetSeconds = (newTime.hours * 3600) + (newTime.minutes * 60);
       updateAllTabs();
       break;
+    case 'opacityUpdated':
+      opacity = message.opacity;
+      updateAllTabs();
+      break;
   }
-  return true; // Keep the message channel open for async operations
+  sendResponse({ success: true }); // Always send an immediate response
+  return false; // Don't keep the message channel open
 });
 
 // Color logic
 function getColorFromTime(seconds) {
   if (seconds >= targetSeconds) {
-    return `hsla(0, 100%, 50%, 0.7)`; // Red at target time
+    return `hsl(0, 100%, 50%)`; // Red at target time
   }
 
   const progress = (seconds / targetSeconds) * 100;
@@ -116,7 +128,7 @@ function getColorFromTime(seconds) {
   const stageProgress = (progress - startStage.percent) / (endStage.percent - startStage.percent);
   const hue = startStage.hue + (endStage.hue - startStage.hue) * stageProgress;
   
-  return `hsla(${hue}, 100%, 50%, 0.7)`;
+  return `hsl(${hue}, 100%, 50%)`; // Remove opacity from color
 }
 
 // Force updates on tab load
@@ -158,9 +170,14 @@ function updateTab(tabId) {
     type: 'update',
     color: getColorFromTime(totalSeconds),
     seconds: totalSeconds,
-    enabled: isEnabled
+    enabled: isEnabled,
+    opacity: opacity
   };
   
-  chrome.tabs.sendMessage(tabId, message)
-    .catch(err => console.debug("Tab update error:", tabId, err.message));
+  try {
+    chrome.tabs.sendMessage(tabId, message)
+      .catch(() => {}); // Silently handle connection errors
+  } catch (error) {
+    console.debug("Tab update error:", tabId);
+  }
 }

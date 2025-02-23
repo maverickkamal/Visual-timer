@@ -1,4 +1,4 @@
-# Visual Timer Chrome Extension
+# Visual Timer Chrome/Firefox Extension
 
 <p align="center">
   <img src="icon128.png" alt="Visual Timer Icon" width="128" height="128">
@@ -9,21 +9,47 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 ## Features
 
 - Visual color-changing overlay that transitions through different colors (Blue → Green → Purple → Red)
+- Adjustable overlay opacity (1-100%)
 - Customizable time settings (up to 24 hours)
 - Show/hide time display
 - Pause and reset functionality
 - Works on all websites
 - Special compatibility with YouTube
-- Low opacity overlay that doesn't interfere with content
+- Settings sync across Chrome instances
 - Automatic pause during system idle
+
+## Version History
+
+### v1.3 (Current)
+- Added adjustable opacity control
+- Added opacity sync across Chrome instances
+- Added tooltip for opacity percentage
+- Improved settings persistence
+
+### v1.0
+- Initial release
+- Basic timer functionality
+- Color transitions
+- YouTube compatibility
 
 ## Installation
 
+### Chrome
 1. Clone this repository or download the source code
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" in the top right corner
 4. Click "Load unpacked" in the top left
 5. Select the folder containing the extension files
+
+### Firefox
+1. Clone this repository or download the source code
+2. Rename `manifest-ff.json` to `manifest.json` (make sure to backup the original Chrome manifest if needed)
+3. Open Firefox and navigate to `about:debugging`
+4. Click on "This Firefox" in the left sidebar
+5. Click "Load Temporary Add-on"
+6. Navigate to your extension folder and select the `manifest.json` file
+
+Note: Firefox extensions loaded this way are temporary and will be removed when Firefox is closed. For permanent installation, the extension needs to be signed by Mozilla.
 
 ## Usage
 
@@ -41,6 +67,7 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 - **Time Until Red**: Set the total duration before the overlay turns red
   - Hours: 0-24
   - Minutes: 0-59
+- **Overlay Opacity**: Adjust the transparency of the color overlay (1-100%)
 
 #### Control Buttons
 - **Reset Timer**: Restart the timer from 0 and reset the color to blue
@@ -69,6 +96,8 @@ When using YouTube, the extension automatically adjusts its overlay to:
 - The extension automatically pauses when your system is idle
 - The settings are synchronized across your Chrome profile
 - The overlay works independently on each tab
+- Use the opacity slider to find the perfect balance between visibility and non-intrusiveness
+- Your opacity settings will sync across all your Chrome instances
 
 ## Technical Details
 
