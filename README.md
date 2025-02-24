@@ -6,6 +6,28 @@
 
 A Chrome extension that provides a visual time-tracking overlay that changes color over time, helping you stay aware of time passing while working on tasks.
 
+## Screenshots
+
+<p align="center">
+  <img src="recording/Screenshot 2025-02-24 102937.png" alt="Timer Initial State" width="400"><br>
+  <em>Initial blue state</em>
+</p>
+
+<p align="center">
+  <img src="recording/Screenshot 2025-02-24 103013.png" alt="Timer Mid State" width="400"><br>
+  <em>Transitioning through green</em>
+</p>
+
+<p align="center">
+  <img src="recording/Screenshot 2025-02-24 103033.png" alt="Timer Late State" width="400"><br>
+  <em>Purple transition stage</em>
+</p>
+
+<p align="center">
+  <img src="recording/Screenshot 2025-02-24 103209.png" alt="Timer Final State" width="400"><br>
+  <em>Final red state</em>
+</p>
+
 ## Features
 
 - Visual color-changing overlay that transitions through different colors (Blue → Green → Purple → Red)
@@ -33,6 +55,14 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 - YouTube compatibility
 
 ## Installation
+
+### Watch Installation Guide
+<p align="center">
+  <video width="800" controls>
+    <source src="recording/recording.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</p>
 
 ### Chrome
 1. Clone this repository or download the source code
