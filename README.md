@@ -54,7 +54,13 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 ## Version History
 
-### v1.4.0 (Current)
+### v1.4.1 (Current)
+- Fixed overlay flickering issue on page load/refresh
+- Improved transition animations
+- Enhanced initialization timing
+- Optimized performance with will-change CSS property
+
+### v1.4.0
 - Added color stage customization
 - Added visual timeline for color transitions
 - Added color reset functionality

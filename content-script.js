@@ -3,25 +3,35 @@ console.log("[CONTENT] Script injected into:", window.location.href);
 // Create overlay and time display elements
 const overlay = document.createElement('div');
 overlay.id = 'visual-timer-overlay';
+overlay.style.display = 'none'; // Start hidden by default
 document.body.appendChild(overlay);
 
 const timeDisplay = document.createElement('div');
 timeDisplay.id = 'visual-timer-display';
+timeDisplay.style.display = 'none'; // Start hidden by default
 document.body.appendChild(timeDisplay);
 
 let totalSeconds = 0;
 let isInitialized = false;
 
+// Check enabled state immediately
+chrome.storage.sync.get(['enabled', 'showTime'], (result) => {
+  const enabled = result.enabled !== false;
+  const showTime = result.showTime !== false;
+  updateOverlayVisibility(enabled);
+  updateTimeDisplayVisibility(showTime && enabled);
+});
+
 // Handle settings changes and updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'updateVisibility') {
     updateTimeDisplayVisibility(message.showTime);
-    sendResponse({ success: true }); // Send immediate response
-    return false; // Don't keep channel open
+    sendResponse({ success: true });
+    return false;
   } else if (message.type === 'update') {
     updateDisplay(message.color, message.seconds, message.enabled);
-    sendResponse({ success: true }); // Send immediate response
-    return false; // Don't keep channel open
+    sendResponse({ success: true });
+    return false;
   }
 });
 
@@ -32,9 +42,15 @@ function initializeVisibility() {
       const enabled = result.enabled !== false;
       const showTime = result.showTime !== false;
       const opacity = result.opacity || 70;
-      updateOverlayVisibility(enabled);
-      updateTimeDisplayVisibility(showTime && enabled);
-      overlay.style.opacity = opacity / 100;
+      
+      // Set initial styles before showing
+      if (overlay) {
+        overlay.style.opacity = opacity / 100;
+        updateOverlayVisibility(enabled);
+      }
+      if (timeDisplay) {
+        updateTimeDisplayVisibility(showTime && enabled);
+      }
       isInitialized = true;
     });
   }
@@ -42,18 +58,36 @@ function initializeVisibility() {
 
 // Initialize as soon as possible
 initializeVisibility();
+
 // Also try again when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', initializeVisibility);
 
+// Additional initialization check when window loads
+window.addEventListener('load', initializeVisibility);
+
 function updateTimeDisplayVisibility(show) {
   if (timeDisplay) {
+    timeDisplay.style.visibility = 'hidden'; // Hide first to prevent flicker
     timeDisplay.style.display = show ? 'block' : 'none';
+    if (show) {
+      // Use requestAnimationFrame to ensure smooth transition
+      requestAnimationFrame(() => {
+        timeDisplay.style.visibility = 'visible';
+      });
+    }
   }
 }
 
 function updateOverlayVisibility(show) {
   if (overlay) {
+    overlay.style.visibility = 'hidden'; // Hide first to prevent flicker
     overlay.style.display = show ? 'block' : 'none';
+    if (show) {
+      // Use requestAnimationFrame to ensure smooth transition
+      requestAnimationFrame(() => {
+        overlay.style.visibility = 'visible';
+      });
+    }
   }
 }
 
