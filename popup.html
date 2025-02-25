@@ -78,6 +78,7 @@
       width: 100px;
       height: 4px;
       -webkit-appearance: none;
+      appearance: none;
       background: #ddd;
       border-radius: 2px;
       outline: none;
@@ -153,6 +154,63 @@
       min-width: 45px;
       text-align: center;
     }
+    .color-stages {
+      flex-direction: column !important;
+      gap: 15px;
+    }
+    .color-timeline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      position: relative;
+      padding: 10px 0;
+    }
+    .color-timeline::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 15px;
+      right: 15px;
+      height: 2px;
+      background: #ddd;
+      z-index: 0;
+    }
+    .color-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      z-index: 1;
+    }
+    .color-stage input[type="color"] {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      -webkit-appearance: none;
+      appearance: none;
+      border: 2px solid white;
+      border-radius: 50%;
+      background: none;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .color-stage input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: 50%;
+    }
+    .color-stage input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+    }
+    .color-stage span {
+      font-size: 12px;
+      color: #666;
+    }
+    .btn-small {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -194,6 +252,30 @@
       <input type="range" id="opacityControl" class="range-slider" min="1" max="100" value="70" title="Adjust overlay transparency">
       <span id="opacityValue" class="tooltip">70%</span>
     </div>
+  </div>
+
+  <!-- Color Stages Display -->
+  <div class="setting-group color-stages">
+    <span class="setting-label">Color Transitions</span>
+    <div class="color-timeline">
+      <div class="color-stage">
+        <input type="color" id="color1" value="#0000FF" title="Start color">
+        <span>Start</span>
+      </div>
+      <div class="color-stage">
+        <input type="color" id="color2" value="#00FF00" title="33% color">
+        <span>33%</span>
+      </div>
+      <div class="color-stage">
+        <input type="color" id="color3" value="#8A2BE2" title="66% color">
+        <span>66%</span>
+      </div>
+      <div class="color-stage">
+        <input type="color" id="color4" value="#FF0000" title="End color">
+        <span>End</span>
+      </div>
+    </div>
+    <button id="resetColors" class="btn btn-secondary btn-small">Reset Colors</button>
   </div>
 
   <!-- Timer Controls -->

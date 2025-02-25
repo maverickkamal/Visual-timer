@@ -54,7 +54,14 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 ## Version History
 
-### v1.3.1 (Current)
+### v1.4.0 (Current)
+- Added color stage customization
+- Added visual timeline for color transitions
+- Added color reset functionality
+- Updated interface with color picker controls
+- Improved color transition visualization
+
+### v1.3.1
 - Fixed message handling for better stability
 - Improved error handling across browsers
 - Enhanced settings synchronization
@@ -115,6 +122,10 @@ Note: Firefox extensions loaded this way are temporary and will be removed when 
   - Lower values make the overlay more transparent
   - Higher values make the overlay more visible
   - Default: 70%
+- **Color Transitions**: Customize the color stages of the timer
+  - Choose colors for Start, 33%, 66%, and End stages
+  - Reset to default colors (Blue → Green → Purple → Red)
+  - Changes apply immediately to all tabs
 
 #### Control Buttons
 - **Reset Timer**: Restart the timer from 0 and reset the color to blue

@@ -19,6 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePauseButtonState(result.enabled !== false);
   });
 
+  // Load color settings
+  chrome.storage.sync.get(['colorStages'], (result) => {
+    const defaultColors = [
+      { hue: 240, hex: '#0000FF' }, // Blue
+      { hue: 120, hex: '#00FF00' }, // Green
+      { hue: 270, hex: '#8A2BE2' }, // Purple
+      { hue: 0, hex: '#FF0000' }    // Red
+    ];
+    
+    const colors = result.colorStages || defaultColors;
+    colors.forEach((color, index) => {
+      document.getElementById(`color${index + 1}`).value = color.hex;
+    });
+  });
+
   // Save settings
   document.getElementById('toggleEnabled').addEventListener('change', (e) => {
     const enabled = e.target.checked;
@@ -75,6 +90,29 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  // Color picker event listeners
+  ['color1', 'color2', 'color3', 'color4'].forEach((id, index) => {
+    document.getElementById(id).addEventListener('change', (e) => {
+      updateColors();
+    });
+  });
+
+  // Reset colors button
+  document.getElementById('resetColors').addEventListener('click', () => {
+    const defaultColors = [
+      { hue: 240, hex: '#0000FF' }, // Blue
+      { hue: 120, hex: '#00FF00' }, // Green
+      { hue: 270, hex: '#8A2BE2' }, // Purple
+      { hue: 0, hex: '#FF0000' }    // Red
+    ];
+    
+    defaultColors.forEach((color, index) => {
+      document.getElementById(`color${index + 1}`).value = color.hex;
+    });
+    
+    updateColors();
+  });
 });
 
 // Helper function to safely update tab visibility
@@ -128,4 +166,54 @@ function updatePauseButtonState(enabled) {
     pauseButton.disabled = !enabled;
     pauseButton.style.opacity = enabled ? '1' : '0.5';
   }
+}
+
+// Helper function to convert hex to HSL hue
+function hexToHue(hex) {
+  // Convert hex to RGB
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  
+  let h;
+  if (max === min) {
+    h = 0;
+  } else {
+    const d = max - min;
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h = Math.round(h * 60);
+  }
+  
+  return h < 0 ? h + 360 : h;
+}
+
+// Function to update color settings
+function updateColors() {
+  const colorStages = [1, 2, 3, 4].map(num => {
+    const hex = document.getElementById(`color${num}`).value;
+    return {
+      hex: hex,
+      hue: hexToHue(hex)
+    };
+  });
+
+  chrome.storage.sync.set({ colorStages }, () => {
+    chrome.runtime.sendMessage({ 
+      type: 'colorStagesUpdated',
+      colorStages
+    });
+  });
 }

@@ -5,10 +5,10 @@ let isPaused = false;
 let targetSeconds = 7200; // Default 2 hours
 let opacity = 70; // Default opacity
 let colorStages = [
-  { hue: 240, percent: 0 },    // Blue
-  { hue: 120, percent: 33 },   // Green
-  { hue: 270, percent: 66 },   // Purple
-  { hue: 0, percent: 100 }     // Red
+  { hue: 240, hex: '#0000FF', percent: 0 },    // Blue
+  { hue: 120, hex: '#00FF00', percent: 33 },   // Green
+  { hue: 270, hex: '#8A2BE2', percent: 66 },   // Purple
+  { hue: 0, hex: '#FF0000', percent: 100 }     // Red
 ];
 
 // Load settings AND timer state
@@ -18,7 +18,8 @@ chrome.runtime.onInstalled.addListener(() => {
     enabled: true, 
     isPaused: false,
     targetTime: { hours: 2, minutes: 0 },
-    opacity: 70
+    opacity: 70,
+    colorStages: colorStages.map(({ hue, hex }) => ({ hue, hex }))
   });
 });
 
@@ -66,6 +67,16 @@ chrome.storage.onChanged.addListener((changes) => {
     opacity = changes.opacity.newValue;
     updateAllTabs();
   }
+  if (changes.colorStages) {
+    const newColors = changes.colorStages.newValue;
+    colorStages = [
+      { ...newColors[0], percent: 0 },
+      { ...newColors[1], percent: 33 },
+      { ...newColors[2], percent: 66 },
+      { ...newColors[3], percent: 100 }
+    ];
+    updateAllTabs();
+  }
 });
 
 // Listen for messages from popup
@@ -99,6 +110,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       opacity = message.opacity;
       updateAllTabs();
       break;
+    case 'colorStagesUpdated':
+      const newColors = message.colorStages;
+      colorStages = [
+        { ...newColors[0], percent: 0 },
+        { ...newColors[1], percent: 33 },
+        { ...newColors[2], percent: 66 },
+        { ...newColors[3], percent: 100 }
+      ];
+      updateAllTabs();
+      break;
   }
   sendResponse({ success: true }); // Always send an immediate response
   return false; // Don't keep the message channel open
@@ -107,7 +128,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Color logic
 function getColorFromTime(seconds) {
   if (seconds >= targetSeconds) {
-    return `hsl(0, 100%, 50%)`; // Red at target time
+    return colorStages[3].hex; // End color
   }
 
   const progress = (seconds / targetSeconds) * 100;
@@ -124,11 +145,8 @@ function getColorFromTime(seconds) {
     }
   }
   
-  // Calculate the hue between the two stages
-  const stageProgress = (progress - startStage.percent) / (endStage.percent - startStage.percent);
-  const hue = startStage.hue + (endStage.hue - startStage.hue) * stageProgress;
-  
-  return `hsl(${hue}, 100%, 50%)`; // Remove opacity from color
+  // Use hex colors directly instead of hue interpolation
+  return startStage.hex;
 }
 
 // Force updates on tab load
