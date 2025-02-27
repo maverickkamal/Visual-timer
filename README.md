@@ -5,14 +5,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.3.1-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.4.3-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/chrome-%E2%9C%93-brightgreen.svg" alt="Chrome">
   <img src="https://img.shields.io/badge/firefox-%E2%9C%93-orange.svg" alt="Firefox">
   <img src="https://img.shields.io/badge/manifest-v3-green.svg" alt="Manifest V3">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
   <br>
   <img src="https://img.shields.io/badge/pure-javascript-yellow.svg" alt="Pure JavaScript">
-  <img src="https://img.shields.io/badge/no_dependencies-%E2%9C%93-green.svg" alt="No Dependencies">
+  <img src="https://img.shields.io-badge/no_dependencies-%E2%9C%93-green.svg" alt="No Dependencies">
   <img src="https://img.shields.io/badge/settings-synced-blue.svg" alt="Settings Synced">
 </p>
 
@@ -54,7 +54,26 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 ## Version History
 
-### v1.4.1 (Current)
+### v1.4.3 (Current)
+- Fixed multiple script injection issues
+- Prevented tab reloading on message failures
+- Added protection against duplicate elements
+- Improved script messaging and error handling
+- Added script presence detection
+- Enhanced compatibility with different websites
+- Reduced unnecessary tab updates
+
+### v1.4.2
+- Fixed overlay persistence after disabling extension
+- Fixed glitchy behavior after system idle/sleep
+- Improved state management across tabs
+- Added periodic state verification
+- Enhanced visibility state handling
+- Improved tab reload behavior
+- Added force disable functionality
+- Optimized transitions and animations
+
+### v1.4.1
 - Fixed overlay flickering issue on page load/refresh
 - Improved transition animations
 - Enhanced initialization timing
