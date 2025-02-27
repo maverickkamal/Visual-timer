@@ -245,7 +245,8 @@ function updateTab(tabId) {
     seconds: totalSeconds,
     enabled: isEnabled,
     opacity: opacity,
-    isPaused: isPaused
+    isPaused: isPaused,
+    targetSeconds: targetSeconds // Add target seconds for opacity calculation
   };
   
   try {
