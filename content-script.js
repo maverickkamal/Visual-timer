@@ -11,6 +11,8 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
   let totalSeconds = 0;
   let isInitialized = false;
   let isEnabled = false;
+  let targetOpacity = 0.7; // Default target opacity
+  let targetSeconds = 7200; // Default to 2 hours
 
   // Function to safely create and append elements
   function createElements() {
@@ -117,6 +119,9 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
           break;
         case 'update':
           isEnabled = message.enabled;
+          if (message.targetSeconds) {
+            targetSeconds = message.targetSeconds;
+          }
           if (!isEnabled) {
             ensureDisabled();
           } else {
@@ -198,7 +203,19 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
       updateTimeDisplayVisibility(result.showTime && enabled);
       if (overlay) {
         overlay.style.backgroundColor = color;
-        overlay.style.opacity = overlayOpacity / 100;
+        
+        // Calculate a reduced opacity for early stages
+        const progress = seconds / targetSeconds;
+        const startOpacity = 0.05; // Start with just 5% of the target opacity
+        const currentOpacity = startOpacity + (progress * (overlayOpacity / 100 - startOpacity));
+        
+        // Clamp the opacity between the start value and the target
+        const finalOpacity = Math.min(overlayOpacity / 100, Math.max(startOpacity, currentOpacity));
+        
+        // Store target opacity for future calculations
+        targetOpacity = overlayOpacity / 100;
+        
+        overlay.style.opacity = finalOpacity;
       }
     });
     
@@ -273,14 +290,26 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
     addYouTubeStyle();
   }
 
-  // Make sure we clean up on unload
-  window.addEventListener('unload', () => {
-    if (overlay && overlay.parentNode) {
-      overlay.parentNode.removeChild(overlay);
+  // Use safer cleanup method (pagehide instead of unload)
+  try {
+    window.addEventListener('pagehide', cleanupElements);
+    // Fallback cleanup with beforeunload (more widely supported)
+    window.addEventListener('beforeunload', cleanupElements);
+  } catch (error) {
+    console.debug("[CONTENT] Error adding cleanup listeners:", error);
+  }
+  
+  function cleanupElements() {
+    try {
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+      if (timeDisplay && timeDisplay.parentNode) {
+        timeDisplay.parentNode.removeChild(timeDisplay);
+      }
+    } catch (error) {
+      console.debug("[CONTENT] Error during cleanup:", error);
     }
-    if (timeDisplay && timeDisplay.parentNode) {
-      timeDisplay.parentNode.removeChild(timeDisplay);
-    }
-  });
+  }
 }
 
