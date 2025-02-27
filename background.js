@@ -13,6 +13,15 @@ let colorStages = [
 
 // Load settings AND timer state
 chrome.runtime.onInstalled.addListener(() => {
+  resetState();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  resetState();
+  loadState();
+});
+
+function resetState() {
   chrome.storage.local.set({ totalSeconds: 0 });
   chrome.storage.sync.set({ 
     enabled: true, 
@@ -21,26 +30,30 @@ chrome.runtime.onInstalled.addListener(() => {
     opacity: 70,
     colorStages: colorStages.map(({ hue, hex }) => ({ hue, hex }))
   });
-});
-
-chrome.runtime.onStartup.addListener(() => {
-  loadState();
-});
+  
+  // Reset all internal states
+  totalSeconds = 0;
+  isActive = true;
+  isEnabled = true;
+  isPaused = false;
+}
 
 function loadState() {
   chrome.storage.local.get(['totalSeconds'], (result) => {
     totalSeconds = result.totalSeconds || 0;
-    updateAllTabs(); // Update all tabs with current state
-  });
-  
-  chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime', 'opacity'], (result) => {
-    isEnabled = result.enabled !== false;
-    isPaused = result.isPaused || false;
-    if (result.targetTime) {
-      targetSeconds = (result.targetTime.hours * 3600) + (result.targetTime.minutes * 60);
-    }
-    opacity = result.opacity || 70;
-    updateAllTabs(); // Update all tabs with current state
+    
+    // Double-check enabled state when loading
+    chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime', 'opacity'], (syncResult) => {
+      isEnabled = syncResult.enabled !== false;
+      isPaused = syncResult.isPaused || false;
+      if (syncResult.targetTime) {
+        targetSeconds = (syncResult.targetTime.hours * 3600) + (syncResult.targetTime.minutes * 60);
+      }
+      opacity = syncResult.opacity || 70;
+      
+      // Force update all tabs with current state
+      updateAllTabs();
+    });
   });
 }
 
@@ -50,7 +63,9 @@ chrome.storage.onChanged.addListener((changes) => {
     isEnabled = changes.enabled.newValue;
     if (!isEnabled) {
       isPaused = false;
+      totalSeconds = 0; // Reset timer when disabled
       chrome.storage.sync.set({ isPaused: false });
+      chrome.storage.local.set({ totalSeconds: 0 });
     }
     updateAllTabs();
   }
@@ -121,8 +136,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       updateAllTabs();
       break;
   }
-  sendResponse({ success: true }); // Always send an immediate response
-  return false; // Don't keep the message channel open
+  sendResponse({ success: true });
+  return false;
 });
 
 // Color logic
@@ -152,27 +167,67 @@ function getColorFromTime(seconds) {
 // Force updates on tab load
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url?.startsWith("http")) {
-    updateTab(tabId);
+    // Double check state before updating tab
+    chrome.storage.sync.get(['enabled'], (result) => {
+      if (result.enabled !== isEnabled) {
+        isEnabled = result.enabled !== false;
+      }
+      updateTab(tabId);
+    });
   }
 });
 
-// Timer logic
+// Timer logic with improved state checks
 chrome.alarms.create('timer', { periodInMinutes: 1/60 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'timer' && isActive && isEnabled && !isPaused) {
-    totalSeconds++;
-    chrome.storage.local.set({ totalSeconds });
-    updateAllTabs();
+  if (alarm.name === 'timer') {
+    // Double check enabled state before updating
+    chrome.storage.sync.get(['enabled', 'isPaused'], (result) => {
+      isEnabled = result.enabled !== false;
+      isPaused = result.isPaused || false;
+      
+      if (isEnabled && isActive && !isPaused) {
+        totalSeconds++;
+        chrome.storage.local.set({ totalSeconds });
+        updateAllTabs();
+      }
+    });
   }
 });
 
-// Activity detection
+// Activity detection with improved state management
 chrome.idle.onStateChanged.addListener((state) => {
-  isActive = state !== "idle";
+  const wasActive = isActive;
+  isActive = state === "active";
+  
+  if (!wasActive && isActive) {
+    // Coming back from idle, verify state
+    loadState();
+  } else if (wasActive && !isActive) {
+    // Going idle, save current state
+    chrome.storage.local.set({ totalSeconds });
+  }
 });
 
-// Helper function to update all tabs
+// Helper function to update all tabs with error handling
 function updateAllTabs() {
+  if (!isEnabled) {
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.id && tab.url?.startsWith("http")) {
+          try {
+            chrome.tabs.sendMessage(tab.id, {
+              type: 'forceDisable'
+            }).catch(() => {});
+          } catch (error) {
+            console.debug("Tab update error:", tab.id);
+          }
+        }
+      });
+    });
+    return;
+  }
+
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.id && tab.url?.startsWith("http")) {
@@ -182,19 +237,35 @@ function updateAllTabs() {
   });
 }
 
-// Helper function to update a single tab
+// Helper function to update a single tab with improved messaging
 function updateTab(tabId) {
   const message = {
     type: 'update',
     color: getColorFromTime(totalSeconds),
     seconds: totalSeconds,
     enabled: isEnabled,
-    opacity: opacity
+    opacity: opacity,
+    isPaused: isPaused
   };
   
   try {
     chrome.tabs.sendMessage(tabId, message)
-      .catch(() => {}); // Silently handle connection errors
+      .catch(() => {
+        // If message fails, only try to inject content script if scripting API is available
+        if (chrome.scripting) {
+          // Check if content script is already injected
+          chrome.tabs.sendMessage(tabId, { type: 'ping' })
+            .catch(() => {
+              // Only inject if the content script isn't already there
+              chrome.scripting.executeScript({
+                target: { tabId },
+                files: ['content-script.js']
+              }).catch(err => {
+                console.debug("Script injection failed:", err);
+              });
+            });
+        }
+      });
   } catch (error) {
     console.debug("Tab update error:", tabId);
   }
