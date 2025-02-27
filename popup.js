@@ -120,18 +120,22 @@ function updateTabsVisibility() {
   const enabled = document.getElementById('toggleEnabled').checked;
   const showTime = document.getElementById('showTime').checked;
   
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      if (tab.url?.startsWith("http")) {
-        try {
-          chrome.tabs.sendMessage(tab.id, {
-            type: 'updateVisibility',
-            showTime: showTime && enabled
-          }).catch(() => {}); // Silently handle rejected promises
-        } catch (error) {
-          console.debug('Tab not ready:', tab.id);
+  // First, update storage to ensure consistent state
+  chrome.storage.sync.set({ enabled, showTime }, () => {
+    // Then update only active tabs to reduce overhead
+    chrome.tabs.query({ active: true }, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.url?.startsWith("http")) {
+          try {
+            chrome.tabs.sendMessage(tab.id, {
+              type: 'updateVisibility',
+              showTime: showTime && enabled
+            }).catch(() => {}); // Silently handle rejected promises
+          } catch (error) {
+            console.debug('Tab not ready:', tab.id);
+          }
         }
-      }
+      });
     });
   });
 }
