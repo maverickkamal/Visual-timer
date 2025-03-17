@@ -26,18 +26,28 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-02-24 103013.png" alt="Timer Mid State" width="400"><br>
-  <em>Transitioning through green</em>
+  <img src="recording/Screenshot 2025-03-17 182049.png" alt="Timer Pixel UI" width="400"><br>
+  <em>Default Pixel UI</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-02-24 103033.png" alt="Timer Late State" width="400"><br>
-  <em>more view of it</em>
+  <img src="recording/Screenshot 2025-03-17 182112.png" alt="Time Settings" width="400"><br>
+  <em>Settings: Time</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-02-24 103209.png" alt="Timer Final State" width="400"><br>
-  <em>overlay on youtube video</em>
+  <img src="recording/Screenshot 2025-03-17 182132.png" alt="Display Setting" width="400"><br>
+  <em>Settings: Display</em>
+</p>
+
+<p align="center">
+  <img src="recording/Screenshot 2025-03-17 182147.png" alt="Colors Setting" width="400"><br>
+  <em>Settings: Colors</em>
+</p>
+
+<p align="center">
+  <img src="recording/Screenshot 2025-03-17 182218.png" alt="Timer Classic UI" width="400"><br>
+  <em>Classic UI</em>
 </p>
 
 ## Features
