@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Visual Timer",
-  "version": "1.4.4",
-  "description": "A visual timer that changes color over time to help track time visually, with adjustable opacity",
+  "version": "1.4.5",
+  "description": "A visual timer that changes color over time to help track time visually, with adjustable opacity and choice of UI styles",
   "browser_specific_settings": {
     "gecko": {
       "id": "visual-timer@yourdomain.com",
@@ -33,7 +33,10 @@
     }
   ],
   "browser_action": {
-    "default_popup": "popup.html",
+    "default_popup": "pixel-popup.html",
     "default_icon": "icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    "images/*"
+  ]
 }
