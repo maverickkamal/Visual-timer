@@ -1,5 +1,18 @@
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // First check if we need to redirect to pixel UI
+  chrome.storage.sync.get(['uiMode'], (result) => {
+    if (result.uiMode === 'pixel') {
+      window.location.href = 'pixel-popup.html';
+      return;
+    }
+
+    // Continue with classic UI initialization
+    initClassicUI();
+  });
+});
+
+function initClassicUI() {
   // Load saved settings after DOM is fully loaded
   chrome.storage.sync.get(['enabled', 'showTime', 'isPaused', 'targetTime', 'opacity'], (result) => {
     document.getElementById('toggleEnabled').checked = result.enabled !== false;
@@ -31,6 +44,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const colors = result.colorStages || defaultColors;
     colors.forEach((color, index) => {
       document.getElementById(`color${index + 1}`).value = color.hex;
+    });
+  });
+
+  // Add UI mode switcher
+  const header = document.querySelector('h3');
+  const uiSwitcher = document.createElement('div');
+  uiSwitcher.className = 'ui-switcher';
+  uiSwitcher.innerHTML = `
+    <button id="pixelUiToggle" class="btn btn-secondary btn-small" title="Switch to Minecraft UI">
+      Pixel UI
+    </button>
+  `;
+  
+  // Insert after the header
+  header.parentNode.insertBefore(uiSwitcher, header.nextSibling);
+  
+  // Add event listener to the UI toggle button
+  document.getElementById('pixelUiToggle').addEventListener('click', () => {
+    // Switch to pixel UI
+    chrome.runtime.sendMessage({ 
+      type: 'switchUI',
+      uiMode: 'pixel'
+    }, () => {
+      window.location.href = 'pixel-popup.html';
     });
   });
 
@@ -113,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     updateColors();
   });
-});
+}
 
 // Helper function to safely update tab visibility
 function updateTabsVisibility() {
