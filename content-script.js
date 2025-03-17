@@ -83,7 +83,16 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
       const showTime = result.showTime !== false;
       
       if (!isEnabled) {
-        ensureDisabled();
+        // Only hide overlay but still show time display based on showTime setting
+        hideOverlay();
+        updateTimeDisplayVisibility(showTime);
+        
+        // Get current timer value even when disabled
+        chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+          if (response && response.totalSeconds !== undefined) {
+            updateTimeDisplay(response.totalSeconds);
+          }
+        });
       } else {
         updateOverlayVisibility(true);
         updateTimeDisplayVisibility(showTime);
@@ -108,22 +117,48 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
     try {
       switch (message.type) {
         case 'forceDisable':
-          ensureDisabled();
+          hideOverlay();
+          // Still update time display - only hide overlay
+          if (timeDisplay) {
+            // Request current time from background if not provided
+            if (message.seconds !== undefined) {
+              updateTimeDisplay(message.seconds);
+            } else {
+              chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+                if (response && response.totalSeconds !== undefined) {
+                  updateTimeDisplay(response.totalSeconds);
+                }
+              });
+            }
+          }
           break;
         case 'updateVisibility':
           if (!isEnabled) {
-            ensureDisabled();
-          } else {
-            updateTimeDisplayVisibility(message.showTime);
+            hideOverlay();
           }
+          // Always update time display visibility based on user preference
+          updateTimeDisplayVisibility(message.showTime);
+          
+          // Always request current time regardless of visibility setting
+          chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+            if (response && response.totalSeconds !== undefined) {
+              updateTimeDisplay(response.totalSeconds);
+            }
+          });
           break;
         case 'update':
           isEnabled = message.enabled;
           if (message.targetSeconds) {
             targetSeconds = message.targetSeconds;
           }
+          
+          // Always update time display regardless of whether timer is enabled
+          if (message.seconds !== undefined && timeDisplay) {
+            updateTimeDisplay(message.seconds);
+          }
+          
           if (!isEnabled) {
-            ensureDisabled();
+            hideOverlay();
           } else {
             updateDisplay(message.color, message.seconds, message.enabled, message.opacity);
           }
@@ -137,7 +172,8 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
     return false;
   });
 
-  function ensureDisabled() {
+  // Function to only hide the overlay, not the time display
+  function hideOverlay() {
     if (overlay) {
       overlay.style.visibility = 'hidden';
       overlay.style.opacity = '0';
@@ -145,17 +181,27 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
         overlay.style.display = 'none';
       });
     }
-    if (timeDisplay) {
-      timeDisplay.style.visibility = 'hidden';
-      timeDisplay.style.opacity = '0';
-      requestAnimationFrame(() => {
-        timeDisplay.style.display = 'none';
+  }
+
+  // Function to ensure disabled state - only hides overlay, keeps time display if enabled
+  function ensureDisabled() {
+    hideOverlay();
+    
+    // For time display, check settings rather than automatically hiding
+    chrome.storage.sync.get(['showTime'], (result) => {
+      updateTimeDisplayVisibility(result.showTime !== false);
+      
+      // Always get current time even when disabled
+      chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+        if (response && response.totalSeconds !== undefined) {
+          updateTimeDisplay(response.totalSeconds);
+        }
       });
-    }
+    });
   }
 
   function updateTimeDisplayVisibility(show) {
-    if (!timeDisplay || !isEnabled) return;
+    if (!timeDisplay) return;
     
     if (!show) {
       timeDisplay.style.visibility = 'hidden';
@@ -170,6 +216,15 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
         timeDisplay.style.opacity = '1';
       });
     }
+  }
+
+  function updateTimeDisplay(seconds) {
+    if (!timeDisplay) return;
+    
+    totalSeconds = seconds;
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+    timeDisplay.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
   function updateOverlayVisibility(show) {
@@ -192,15 +247,20 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
   function updateDisplay(color, seconds, enabled, overlayOpacity) {
     if (!overlay || !timeDisplay) return;
 
+    // Update time display regardless of enabled state
+    if (seconds !== undefined) {
+      updateTimeDisplay(seconds);
+    }
+
     if (!enabled) {
-      ensureDisabled();
+      hideOverlay();
       return;
     }
 
     updateOverlayVisibility(enabled);
     
     chrome.storage.sync.get(['showTime'], (result) => {
-      updateTimeDisplayVisibility(result.showTime && enabled);
+      updateTimeDisplayVisibility(result.showTime !== false);
       if (overlay) {
         overlay.style.backgroundColor = color;
         
@@ -218,13 +278,6 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
         overlay.style.opacity = finalOpacity;
       }
     });
-    
-    if (seconds !== undefined && timeDisplay) {
-      totalSeconds = seconds;
-      const minutes = Math.floor(totalSeconds / 60);
-      const remainingSeconds = totalSeconds % 60;
-      timeDisplay.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
   }
 
   // Re-verify elements and state periodically
@@ -235,13 +288,26 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
           initializeState();
         }
       } else {
-        chrome.storage.sync.get(['enabled'], (result) => {
+        // Always check time display visibility based on user settings
+        chrome.storage.sync.get(['enabled', 'showTime'], (result) => {
           const shouldBeEnabled = result.enabled !== false;
+          const shouldShowTime = result.showTime !== false;
+          
           if (shouldBeEnabled !== isEnabled) {
             isEnabled = shouldBeEnabled;
             if (!isEnabled) {
-              ensureDisabled();
+              hideOverlay();
             }
+          }
+          
+          // Always update time display visibility based on setting
+          updateTimeDisplayVisibility(shouldShowTime);
+        });
+        
+        // Always request current timer value from background, even when disabled
+        chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+          if (response && response.totalSeconds !== undefined) {
+            updateTimeDisplay(response.totalSeconds);
           }
         });
       }
@@ -256,11 +322,23 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
           initializeState();
         }
       }
-      chrome.storage.sync.get(['enabled'], (result) => {
+      chrome.storage.sync.get(['enabled', 'showTime'], (result) => {
         isEnabled = result.enabled !== false;
+        const shouldShowTime = result.showTime !== false;
+        
         if (!isEnabled) {
-          ensureDisabled();
+          hideOverlay();
         }
+        
+        // Always update time display visibility based on setting
+        updateTimeDisplayVisibility(shouldShowTime);
+        
+        // Request current timer value from background
+        chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+          if (response && response.totalSeconds !== undefined) {
+            updateTimeDisplay(response.totalSeconds);
+          }
+        });
       });
     }
   });
