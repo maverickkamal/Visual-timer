@@ -4,6 +4,7 @@ let isEnabled = true;
 let isPaused = false;
 let targetSeconds = 7200; // Default 2 hours
 let opacity = 70; // Default opacity
+let uiMode = 'pixel'; // Changed default UI mode to 'pixel'
 let colorStages = [
   { hue: 240, hex: '#0000FF', percent: 0 },    // Blue
   { hue: 120, hex: '#00FF00', percent: 33 },   // Green
@@ -14,11 +15,17 @@ let colorStages = [
 // Load settings AND timer state
 chrome.runtime.onInstalled.addListener(() => {
   resetState();
+  
+  // Set correct popup based on UI mode
+  updatePopupBasedOnMode();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   resetState();
   loadState();
+  
+  // Set correct popup based on UI mode
+  updatePopupBasedOnMode();
 });
 
 function resetState() {
@@ -28,6 +35,7 @@ function resetState() {
     isPaused: false,
     targetTime: { hours: 2, minutes: 0 },
     opacity: 70,
+    uiMode: 'pixel', // Changed default UI mode to 'pixel'
     colorStages: colorStages.map(({ hue, hex }) => ({ hue, hex }))
   });
   
@@ -43,13 +51,14 @@ function loadState() {
     totalSeconds = result.totalSeconds || 0;
     
     // Double-check enabled state when loading
-    chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime', 'opacity'], (syncResult) => {
+    chrome.storage.sync.get(['enabled', 'isPaused', 'targetTime', 'opacity', 'uiMode'], (syncResult) => {
       isEnabled = syncResult.enabled !== false;
       isPaused = syncResult.isPaused || false;
       if (syncResult.targetTime) {
         targetSeconds = (syncResult.targetTime.hours * 3600) + (syncResult.targetTime.minutes * 60);
       }
       opacity = syncResult.opacity || 70;
+      uiMode = syncResult.uiMode || 'pixel'; // Changed default fallback to 'pixel'
       
       // Force update all tabs with current state
       updateAllTabs();
@@ -81,6 +90,10 @@ chrome.storage.onChanged.addListener((changes) => {
   if (changes.opacity !== undefined) {
     opacity = changes.opacity.newValue;
     updateAllTabs();
+  }
+  if (changes.uiMode !== undefined) {
+    uiMode = changes.uiMode.newValue;
+    updatePopupBasedOnMode();
   }
   if (changes.colorStages) {
     const newColors = changes.colorStages.newValue;
@@ -135,10 +148,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       ];
       updateAllTabs();
       break;
+    case 'switchUI':
+      uiMode = message.uiMode;
+      chrome.storage.sync.set({ uiMode });
+      updatePopupBasedOnMode();
+      break;
+    case 'getState':
+      sendResponse({
+        totalSeconds,
+        isEnabled,
+        isPaused,
+        targetSeconds,
+        opacity,
+        uiMode,
+        colorStages
+      });
+      break;
   }
-  sendResponse({ success: true });
-  return false;
+  if (message.type !== 'getState') {
+    sendResponse({ success: true });
+  }
+  return true; // Keep channel open for async responses
 });
+
+// Function to update the action popup based on UI mode
+function updatePopupBasedOnMode() {
+  const popupFile = uiMode === 'pixel' ? 'pixel-popup.html' : 'popup.html';
+  if (chrome.action) { // For Manifest V3
+    chrome.action.setPopup({ popup: popupFile });
+  } else if (chrome.browserAction) { // For Manifest V2
+    chrome.browserAction.setPopup({ popup: popupFile });
+  }
+}
 
 // Color logic
 function getColorFromTime(seconds) {
