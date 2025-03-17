@@ -211,6 +211,38 @@
       padding: 4px 12px;
       font-size: 12px;
     }
+
+    /* UI Switcher styles */
+    .ui-switcher {
+      text-align: center;
+      margin-bottom: 15px;
+      padding: 5px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    #pixelUiToggle {
+      background-color: #563919;
+      color: white;
+      border: 1px solid #402a15;
+      padding: 6px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    #pixelUiToggle:hover {
+      background-color: #6a4521;
+    }
+    #pixelUiToggle::before {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background-color: #8BC34A;
+      border: 2px solid #333;
+      box-shadow: inset 0 0 0 2px #000;
+    }
   </style>
 </head>
 <body>
