@@ -20,10 +20,6 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 ## Screenshots
 
-<p align="center">
-  <img src="recording/Screenshot 2025-02-24 102937.png" alt="Timer Initial State" width="400"><br>
-  <em>Interface of extension</em>
-</p>
 
 <p align="center">
   <img src="recording/Screenshot 2025-03-17 182049.png" alt="Timer Pixel UI" width="400"><br>
