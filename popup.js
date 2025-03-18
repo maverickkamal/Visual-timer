@@ -159,15 +159,24 @@ function updateTabsVisibility() {
   
   // First, update storage to ensure consistent state
   chrome.storage.sync.set({ enabled, showTime }, () => {
-    // Then update only active tabs to reduce overhead
-    chrome.tabs.query({ active: true }, (tabs) => {
+    // Then update all tabs with the new visibility state
+    chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
         if (tab.url?.startsWith("http")) {
           try {
-            chrome.tabs.sendMessage(tab.id, {
-              type: 'updateVisibility',
-              showTime: showTime && enabled
-            }).catch(() => {}); // Silently handle rejected promises
+            // If timer is disabled, we'll explicitly hide everything
+            if (!enabled) {
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'forceDisable',
+                seconds: 0 // Send 0 to prevent 00:00 display
+              }).catch(() => {}); // Silently handle rejected promises
+            } else {
+              // Otherwise, update visibility based on showTime setting
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'updateVisibility',
+                showTime: showTime
+              }).catch(() => {}); // Silently handle rejected promises
+            }
           } catch (error) {
             console.debug('Tab not ready:', tab.id);
           }
