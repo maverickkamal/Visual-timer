@@ -124,7 +124,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         isEnabled = message.data.enabled;
         if (!isEnabled) {
           isPaused = false;
+          totalSeconds = 0; // Reset timer when disabled
           chrome.storage.sync.set({ isPaused: false });
+          chrome.storage.local.set({ totalSeconds: 0 });
+          forceDisableAllTabs(); // Force disable all tabs immediately
         }
         updateAllTabs();
       }
@@ -161,6 +164,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         targetSeconds,
         opacity,
         uiMode,
+        color: getColorFromTime(totalSeconds),
         colorStages
       });
       break;
@@ -253,19 +257,7 @@ chrome.idle.onStateChanged.addListener((state) => {
 // Helper function to update all tabs with error handling
 function updateAllTabs() {
   if (!isEnabled) {
-    chrome.tabs.query({}, (tabs) => {
-      tabs.forEach((tab) => {
-        if (tab.id && tab.url?.startsWith("http")) {
-          try {
-            chrome.tabs.sendMessage(tab.id, {
-              type: 'forceDisable'
-            }).catch(() => {});
-          } catch (error) {
-            console.debug("Tab update error:", tab.id);
-          }
-        }
-      });
-    });
+    forceDisableAllTabs();
     return;
   }
 
@@ -273,6 +265,24 @@ function updateAllTabs() {
     tabs.forEach((tab) => {
       if (tab.id && tab.url?.startsWith("http")) {
         updateTab(tab.id);
+      }
+    });
+  });
+}
+
+// New function to explicitly disable timer in all tabs
+function forceDisableAllTabs() {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (tab.id && tab.url?.startsWith("http")) {
+        try {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'forceDisable',
+            seconds: 0 // Explicitly send 0 seconds to prevent 00:00 display
+          }).catch(() => {});
+        } catch (error) {
+          console.debug("Tab update error:", tab.id);
+        }
       }
     });
   });
@@ -292,7 +302,7 @@ function updateTab(tabId) {
   
   try {
     chrome.tabs.sendMessage(tabId, message)
-      .catch(() => {
+      .catch((error) => {
         // If message fails, only try to inject content script if scripting API is available
         if (chrome.scripting) {
           // Check if content script is already injected
@@ -302,6 +312,11 @@ function updateTab(tabId) {
               chrome.scripting.executeScript({
                 target: { tabId },
                 files: ['content-script.js']
+              }).then(() => {
+                // After injection succeeds, send the message again with a delay
+                setTimeout(() => {
+                  chrome.tabs.sendMessage(tabId, message).catch(() => {});
+                }, 200);
               }).catch(err => {
                 console.debug("Script injection failed:", err);
               });
