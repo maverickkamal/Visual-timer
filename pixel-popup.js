@@ -151,7 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   function updateTimerVisibility() {
-    timerText.style.opacity = showTime ? '1' : '0';
+    // Only show timer if extension is enabled AND showTime is true
+    timerText.style.opacity = (showTime && isEnabled) ? '1' : '0';
   }
   
   // Helper function to convert hex to HSL hue
@@ -197,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsPanel.classList.remove('show');
   });
 
+  // Toggle button for enabling/disabling the timer
   toggleBtn.addEventListener('click', () => {
     isEnabled = !isEnabled;
     chrome.storage.sync.set({ enabled: isEnabled }, () => {
@@ -205,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data: { enabled: isEnabled }
       });
       updateUI();
+      updateVisibility();
     });
   });
 
@@ -265,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.set({ showTime }, () => {
       updateShowTimeToggle();
       updateTimerVisibility();
+      updateVisibility();
     });
   });
 
@@ -328,6 +332,34 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'popup.html';
     });
   });
+
+  // Helper function to update visibility across all tabs
+  function updateVisibility() {
+    // Query for all tabs and update visibility state
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.url?.startsWith("http")) {
+          try {
+            // If timer is disabled, we'll explicitly hide everything regardless of showTime setting
+            if (!isEnabled) {
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'forceDisable',
+                seconds: 0 // Send 0 to prevent 00:00 display
+              }).catch(() => {}); // Silently handle rejected promises
+            } else {
+              // Otherwise, update visibility based on showTime setting
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'updateVisibility',
+                showTime: showTime
+              }).catch(() => {}); // Silently handle rejected promises
+            }
+          } catch (error) {
+            console.debug('Tab not ready:', tab.id);
+          }
+        }
+      });
+    });
+  }
 
   // Listen for timer updates from background
   chrome.runtime.onMessage.addListener((message) => {
