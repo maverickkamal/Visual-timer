@@ -83,19 +83,20 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
       const showTime = result.showTime !== false;
       
       if (!isEnabled) {
-        // Only hide overlay but still show time display based on showTime setting
+        // If timer is disabled, hide both overlay and time display
         hideOverlay();
+        hideTimeDisplay();
+      } else {
+        updateOverlayVisibility(true);
+        // Only show time display if both timer is enabled AND showTime is true
         updateTimeDisplayVisibility(showTime);
         
-        // Get current timer value even when disabled
+        // Get current timer value
         chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
           if (response && response.totalSeconds !== undefined) {
             updateTimeDisplay(response.totalSeconds);
           }
         });
-      } else {
-        updateOverlayVisibility(true);
-        updateTimeDisplayVisibility(showTime);
       }
     });
   }
@@ -118,33 +119,24 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
       switch (message.type) {
         case 'forceDisable':
           hideOverlay();
-          // Still update time display - only hide overlay
-          if (timeDisplay) {
-            // Request current time from background if not provided
-            if (message.seconds !== undefined) {
-              updateTimeDisplay(message.seconds);
-            } else {
-              chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
-                if (response && response.totalSeconds !== undefined) {
-                  updateTimeDisplay(response.totalSeconds);
-                }
-              });
-            }
-          }
+          hideTimeDisplay(); // Always hide time display when force disabled
+          isEnabled = false;
           break;
         case 'updateVisibility':
           if (!isEnabled) {
             hideOverlay();
+            hideTimeDisplay(); // Always hide time display when timer is disabled
+          } else {
+            // Only update time display visibility if timer is enabled
+            updateTimeDisplayVisibility(message.showTime);
+            
+            // Request current time
+            chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+              if (response && response.totalSeconds !== undefined) {
+                updateTimeDisplay(response.totalSeconds);
+              }
+            });
           }
-          // Always update time display visibility based on user preference
-          updateTimeDisplayVisibility(message.showTime);
-          
-          // Always request current time regardless of visibility setting
-          chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
-            if (response && response.totalSeconds !== undefined) {
-              updateTimeDisplay(response.totalSeconds);
-            }
-          });
           break;
         case 'update':
           isEnabled = message.enabled;
@@ -152,15 +144,16 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
             targetSeconds = message.targetSeconds;
           }
           
-          // Always update time display regardless of whether timer is enabled
-          if (message.seconds !== undefined && timeDisplay) {
-            updateTimeDisplay(message.seconds);
-          }
-          
           if (!isEnabled) {
             hideOverlay();
+            hideTimeDisplay(); // Hide time display when timer is disabled
           } else {
             updateDisplay(message.color, message.seconds, message.enabled, message.opacity);
+            
+            // Update time display if timer is enabled
+            if (message.seconds !== undefined && timeDisplay) {
+              updateTimeDisplay(message.seconds);
+            }
           }
           break;
       }
@@ -182,33 +175,30 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
       });
     }
   }
-
-  // Function to ensure disabled state - only hides overlay, keeps time display if enabled
-  function ensureDisabled() {
-    hideOverlay();
-    
-    // For time display, check settings rather than automatically hiding
-    chrome.storage.sync.get(['showTime'], (result) => {
-      updateTimeDisplayVisibility(result.showTime !== false);
-      
-      // Always get current time even when disabled
-      chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
-        if (response && response.totalSeconds !== undefined) {
-          updateTimeDisplay(response.totalSeconds);
-        }
-      });
-    });
-  }
-
-  function updateTimeDisplayVisibility(show) {
-    if (!timeDisplay) return;
-    
-    if (!show) {
+  
+  // New function to explicitly hide the time display
+  function hideTimeDisplay() {
+    if (timeDisplay) {
       timeDisplay.style.visibility = 'hidden';
       timeDisplay.style.opacity = '0';
       requestAnimationFrame(() => {
         timeDisplay.style.display = 'none';
       });
+    }
+  }
+
+  // Function to ensure disabled state - hides both overlay and time display
+  function ensureDisabled() {
+    hideOverlay();
+    hideTimeDisplay();
+  }
+
+  function updateTimeDisplayVisibility(show) {
+    if (!timeDisplay) return;
+    
+    // Only show time display if extension is enabled AND showTime is true
+    if (!show || !isEnabled) {
+      hideTimeDisplay();
     } else {
       timeDisplay.style.display = 'block';
       requestAnimationFrame(() => {
@@ -247,20 +237,23 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
   function updateDisplay(color, seconds, enabled, overlayOpacity) {
     if (!overlay || !timeDisplay) return;
 
-    // Update time display regardless of enabled state
-    if (seconds !== undefined) {
+    // Update time display only if timer is enabled
+    if (seconds !== undefined && enabled) {
       updateTimeDisplay(seconds);
     }
 
     if (!enabled) {
       hideOverlay();
+      hideTimeDisplay(); // Hide time display when disabled
       return;
     }
 
     updateOverlayVisibility(enabled);
     
     chrome.storage.sync.get(['showTime'], (result) => {
+      // Only show time display if both timer is enabled AND showTime is true
       updateTimeDisplayVisibility(result.showTime !== false);
+      
       if (overlay) {
         overlay.style.backgroundColor = color;
         
@@ -288,26 +281,29 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
           initializeState();
         }
       } else {
-        // Always check time display visibility based on user settings
+        // Always check timer enabled state and time display visibility
         chrome.storage.sync.get(['enabled', 'showTime'], (result) => {
           const shouldBeEnabled = result.enabled !== false;
           const shouldShowTime = result.showTime !== false;
           
-          if (shouldBeEnabled !== isEnabled) {
-            isEnabled = shouldBeEnabled;
-            if (!isEnabled) {
+          // If timer is disabled, always hide both overlay and time display
+          if (!shouldBeEnabled) {
+            if (isEnabled !== shouldBeEnabled) {
+              isEnabled = shouldBeEnabled;
               hideOverlay();
+              hideTimeDisplay(); // Hide time display when disabled
             }
-          }
-          
-          // Always update time display visibility based on setting
-          updateTimeDisplayVisibility(shouldShowTime);
-        });
-        
-        // Always request current timer value from background, even when disabled
-        chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
-          if (response && response.totalSeconds !== undefined) {
-            updateTimeDisplay(response.totalSeconds);
+          } else {
+            isEnabled = shouldBeEnabled;
+            // Only update time display visibility if timer is enabled
+            updateTimeDisplayVisibility(shouldShowTime);
+            
+            // Request current time from background if timer is enabled
+            chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+              if (response && response.totalSeconds !== undefined && isEnabled) {
+                updateTimeDisplay(response.totalSeconds);
+              }
+            });
           }
         });
       }
@@ -328,17 +324,18 @@ if (window.hasOwnProperty('__visualTimerInjected')) {
         
         if (!isEnabled) {
           hideOverlay();
+          hideTimeDisplay(); // Hide time display when disabled
+        } else {
+          // Only update time display visibility if timer is enabled
+          updateTimeDisplayVisibility(shouldShowTime);
+          
+          // Request current timer value from background
+          chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
+            if (response && response.totalSeconds !== undefined) {
+              updateTimeDisplay(response.totalSeconds);
+            }
+          });
         }
-        
-        // Always update time display visibility based on setting
-        updateTimeDisplayVisibility(shouldShowTime);
-        
-        // Request current timer value from background
-        chrome.runtime.sendMessage({ type: 'getState' }, (response) => {
-          if (response && response.totalSeconds !== undefined) {
-            updateTimeDisplay(response.totalSeconds);
-          }
-        });
       });
     }
   });
