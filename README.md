@@ -22,27 +22,27 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 
 <p align="center">
-  <img src="recording/Screenshot 2025-03-17 182049.png" alt="Timer Pixel UI" width="400"><br>
+  <img src="\assets\Screenshots\Screenshot 2025-03-17 182049.png" alt="Timer Pixel UI" width="400"><br>
   <em>Default Pixel UI</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-03-17 182112.png" alt="Time Settings" width="400"><br>
+  <img src="\assets\Screenshots\Screenshot 2025-03-17 182112.png" alt="Time Settings" width="400"><br>
   <em>Settings: Time</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-03-17 182132.png" alt="Display Setting" width="400"><br>
+  <img src="\assets\Screenshots\Screenshot 2025-03-17 182132.png" alt="Display Setting" width="400"><br>
   <em>Settings: Display</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-03-17 182147.png" alt="Colors Setting" width="400"><br>
+  <img src="\assets\Screenshots\Screenshot 2025-03-17 182147.png" alt="Colors Setting" width="400"><br>
   <em>Settings: Colors</em>
 </p>
 
 <p align="center">
-  <img src="recording/Screenshot 2025-03-17 182218.png" alt="Timer Classic UI" width="400"><br>
+  <img src="\assets\Screenshots\Screenshot 2025-03-17 182218.png" alt="Timer Classic UI" width="400"><br>
   <em>Classic UI</em>
 </p>
 
@@ -128,7 +128,7 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 ## Installation
 
 ### Watch Installation & Usage Guide
-[![Watch the Installation & Usage Guide](recording/Screenshot 2025-02-24 102937.png)](https://youtu.be/ik6qIkiS-jo "Watch the Installation & Usage Guide")
+[![Watch the Installation & Usage Guide](\assets\Screenshots\Screenshot 2025-02-24 102937.png)](https://youtu.be/ik6qIkiS-jo "Watch the Installation & Usage Guide")
 <p align="center"><em>👆 Click the image above to watch the installation and usage guide on YouTube</em></p>
 
 ### Chrome
