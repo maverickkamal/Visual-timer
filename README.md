@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.4.5-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/chrome-%E2%9C%93-brightgreen.svg" alt="Chrome">
   <img src="https://img.shields.io/badge/firefox-%E2%9C%93-orange.svg" alt="Firefox">
   <img src="https://img.shields.io/badge/manifest-v3-green.svg" alt="Manifest V3">
@@ -61,8 +61,14 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 
 ## Version History
 
-### v1.4.5 (Current)
+### 1.5.0 (Current)
+- Major UI improvements with pixel-perfect design
 - Added alternative Minecraft-styled Pixel UI
+- Fixed live timer update issue - timer now updates in real-time without requiring extension click
+- Fixed timer display visibility - timer now properly disappears when extension is disabled
+- Enhanced code structure and organization
+- Improved extension reliability and performance
+- Better handling of disabled state
 - Added UI switcher to toggle between Classic and Pixel interfaces
 - Improved performance with CSS-based textures
 - Enhanced cross-browser compatibility
