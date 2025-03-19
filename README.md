@@ -1,7 +1,7 @@
 # Visual Timer Chrome/Firefox Extension
 
 <p align="center">
-  <img src="icon128.png" alt="Visual Timer Icon" width="128" height="128">
+  <img src="\assets\icons\icon128.png" alt="Visual Timer Icon" width="128" height="128">
 </p>
 
 <p align="center">
