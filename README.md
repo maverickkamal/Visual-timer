@@ -147,9 +147,6 @@ A Chrome extension that provides a visual time-tracking overlay that changes col
 ### Firefox
 1. Clone this repository or download the source code
 2. Rename `manifest-ff.json` to `manifest.json` (make sure to backup the original Chrome manifest if needed)
-3. ### Firefox
-1. Clone this repository or download the source code
-2. Rename `manifest-ff.json` to `manifest.json` (make sure to backup the original Chrome manifest if needed)
 3. Open Firefox and navigate to `about:debugging`
 4. Click on "This Firefox" in the left sidebar
 5. Click "Load Temporary Add-on"
@@ -166,6 +163,14 @@ Note: Firefox extensions loaded this way are temporary and will be removed when 
 5. Customize colors if desired
 6. Enable/Disable the timer as needed
 7. Use Pause/Resume to control timing
+
+### To set the timer:
+1. Click the extension icon
+2. Go to "Settings" tab (if using Pixel UI)
+3. Use the hour/minute inputs to set your desired time
+4. The changes are applied automatically
+
+Note: The color changes gradually not immediately.
 
 ### Settings
 
